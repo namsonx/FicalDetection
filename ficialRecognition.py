@@ -7,10 +7,27 @@ import argparse
 from sklearn import neighbors
 from face_recognition.face_recognition_cli import image_files_in_folder
 from time import sleep
+import paho.mqtt.client as paho
 
-train_dir = "/home/bosch/Son/TrainDir"
-model_path = "/home/bosch/Son/TrainDir/trained_knn_model.clf"
-cam_link = "http://service:smartcity123@192.168.1.112/snap.jpg?JpegSize=L"
+train_dir = os.getenv('TRAIN_DIR', '/home/bosch/Son/TrainDir')
+model_path = train_dir + '/trained_knn_model.clf'
+broker = os.getenv('BROKER', '192.168.1.31')
+port = 1883
+camera_ip = os.getenv('CAMERA_IP', '192.168.1.50')
+cam_link = 'http://service:smartcity123@' + camera_ip + '/snap.jpg?JpegSize=L'
+detection_delay_ms = 15 * 60 * 1000
+current_milli_time = lambda: int(round(time.time() * 1000))
+vistor = []
+
+def on_publish(client, userdata, result):
+    print("Published data")
+    pass
+
+def on_disconnect(client, userdata, rc):
+    print("client disconnected ok")
+    
+client = paho.Client("fical-detection")
+client.on_publish = on_publish
 
 def train(train_dir, model_save_path=None, n_neighbors=None, knn_algo='ball_tree', verbose=False):
     X = []
@@ -79,10 +96,10 @@ def main():
         create_model(train_dir, model_path)
     
     if args.train==None:
-        #video_capture = cv2.VideoCapture(0)
         try:
             while True:
                 print "Loop running"
+                person = {}
                 video_capture = cv2.VideoCapture(cam_link)
                 distance_threshold = 0.45
                 ret, frame = video_capture.read()
@@ -100,6 +117,23 @@ def main():
                 for pred, loc, rec in zip(knn_clf.predict(faces_encodings), face_locations, are_matches):
                     if rec:
                         print pred, loc
+                        check = 0
+                        for p in vistor:
+                            if p['name']==pred:
+                                check = 1
+                                now = current_milli_time()
+                                if now - p['record_time'] >= detection_delay_ms:
+                                    display_name = 'Mr.' + p['name']
+                                    p['record_time'] = current_milli_time()
+                                    client.connect(broker, port)
+                                    client.publish("test/detection", display_name)
+                        if check==0:
+                            person['name'] = pred
+                            person['record_time'] = current_milli_time()
+                            vistor.append(person)
+                            display_name = 'Mr.' + person['name']
+                            client.connect(broker, port)
+                            client.publish("test/detection", display_name)
                     else:
                         print "unkown", loc
         except KeyboardInterrupt:
@@ -107,7 +141,5 @@ def main():
             pass
 
 if __name__ == "__main__":
-    #create_model(train_dir, model_path)
-    #save_image()
     main()
     pass
