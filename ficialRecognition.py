@@ -4,6 +4,7 @@ import face_recognition
 import cv2
 import pickle
 import argparse
+import time
 from sklearn import neighbors
 from face_recognition.face_recognition_cli import image_files_in_folder
 from time import sleep
