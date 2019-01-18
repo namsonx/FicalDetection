@@ -123,7 +123,7 @@ def main():
                                 check = 1
                                 now = current_milli_time()
                                 if now - p['record_time'] >= detection_delay_ms:
-                                    display_name = 'Mr.' + p['name']
+                                    display_name = p['name']
                                     p['record_time'] = current_milli_time()
                                     client.connect(broker, port)
                                     client.publish("test/detection", display_name)
@@ -131,7 +131,7 @@ def main():
                             person['name'] = pred
                             person['record_time'] = current_milli_time()
                             vistor.append(person)
-                            display_name = 'Mr.' + person['name']
+                            display_name = person['name']
                             client.connect(broker, port)
                             client.publish("test/detection", display_name)
                     else:
