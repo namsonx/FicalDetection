@@ -84,7 +84,16 @@ def save_image(name):
     except KeyboardInterrupt:
         print('Ended collecting pics')
         pass
-        
+    
+def update_image(name, face_image):    
+    print('Starting update image for: ', name)
+    current_time = str(datetime.now())
+    current_time = current_time.replace(" ", "").replace(":", "").replace("-", "")
+    current_time = current_time.split(".")[0]
+    img_folder = train_dir + '/' + name
+    img_path = img_folder + '/' + 'update_face_' + current_time + '.jpg'
+    status = cv2.imwrite(img_path, face_image)
+    print("save image %s status: %s." %(img_path, status))    
 
 def main():
     print('starting main function')        
@@ -116,6 +125,9 @@ def main():
                 for pred, loc, rec in zip(knn_clf.predict(faces_encodings), face_locations, are_matches):
                     if rec:
                         print(pred, loc)
+                        top, right, bottom, left = loc
+                        face = frame[top:bottom, left:right]
+                        update_image(pred, face)
                         check = 0
                         for p in vistor:
                             if p['name']==pred:
