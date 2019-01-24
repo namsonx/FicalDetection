@@ -9,6 +9,7 @@ from sklearn import neighbors
 from face_recognition.face_recognition_cli import image_files_in_folder
 from time import sleep
 import paho.mqtt.client as paho
+from datetime import datetime
 
 train_dir = os.getenv('TRAIN_DIR', '/home/bosch/Son/TrainDir')
 model_path = train_dir + '/trained_knn_model.clf'
@@ -77,8 +78,12 @@ def save_image(name):
             face_locations = face_recognition.face_locations(rgb_frame)
             if len(face_locations) == 0 or len(face_locations) > 1:
                 continue
+            # Only 1 face in face_locations
+            for face in face_locations:
+                top, right, bottom, left = face
+                face_img = frame[top:bottom, left:right]
             img_path = img_folder + "/" + name + "_" + str(index) + ".jpg"
-            status = cv2.imwrite(img_path, frame)
+            status = cv2.imwrite(img_path, face_img)
             print "save image number %s status: %s." %(index, status)
             index = index + 1
     except KeyboardInterrupt:
@@ -111,7 +116,7 @@ def main():
                 print "Loop running"
                 person = {}
                 video_capture = cv2.VideoCapture(cam_link)
-                distance_threshold = 0.45
+                distance_threshold = 0.3
                 ret, frame = video_capture.read()
                 rgb_frame = frame[:, :, ::-1]
                 face_locations = face_recognition.face_locations(rgb_frame)
