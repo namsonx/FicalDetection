@@ -129,13 +129,14 @@ def main():
                 are_matches = [closest_distances[0][i][0] <= distance_threshold for i in range(len(face_locations))]
                 for pred, loc, rec in zip(knn_clf.predict(faces_encodings), face_locations, are_matches):
                     if rec:
-                        print pred, loc
+                        name = str(pred)
+                        print name, loc
                         top, right, bottom, left = loc
                         face = frame[top:bottom, left:right]
-                        update_image(pred, face)
+                        update_image(name, face)
                         check = 0
                         for p in vistor:
-                            if p['name']==pred:
+                            if p['name']==name:
                                 check = 1
                                 now = current_milli_time()
                                 if now - p['record_time'] >= detection_delay_ms:
@@ -144,7 +145,7 @@ def main():
                                     client.connect(broker, port)
                                     client.publish("test/detection", display_name)
                         if check==0:
-                            person['name'] = pred
+                            person['name'] = name
                             person['record_time'] = current_milli_time()
                             vistor.append(person)
                             display_name = person['name']

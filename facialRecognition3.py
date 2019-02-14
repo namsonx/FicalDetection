@@ -11,7 +11,7 @@ from time import sleep
 import paho.mqtt.client as paho
 from datetime import datetime
 
-train_dir = os.getenv('TRAIN_DIR', '/home/bosch/Son/TrainDir')
+train_dir = os.getenv('TRAIN_DIR', '/home/bosch/facerecognition/TrainDir')
 model_path = train_dir + '/trained_knn_model.clf'
 broker = os.getenv('BROKER', '192.168.1.31')
 port = 1883
@@ -112,7 +112,7 @@ def main():
     if args.train==None:
         try:
             while True:
-                print("Loop running")
+                #print("Loop running")
                 person = {}
                 video_capture = cv2.VideoCapture(cam_link)
                 distance_threshold = 0.3
@@ -123,18 +123,19 @@ def main():
                     continue
                 faces_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
                 with open(model_path, 'rb') as f:
-                    knn_clf = pickle.load(f)  
+                    knn_clf = pickle.load(f, encoding='latin1')  
                 closest_distances = knn_clf.kneighbors(faces_encodings, n_neighbors=1)
                 are_matches = [closest_distances[0][i][0] <= distance_threshold for i in range(len(face_locations))]
                 for pred, loc, rec in zip(knn_clf.predict(faces_encodings), face_locations, are_matches):
                     if rec:
                         print(pred, loc)
                         top, right, bottom, left = loc
-                        face = frame[top:bottom, left:right]
-                        update_image(pred, face)
+                        face = frame[top-50:bottom+50, left-50:right+50]
+                        name = str(pred, "utf-8")
+                        update_image(name, face)
                         check = 0
                         for p in vistor:
-                            if p['name']==pred:
+                            if p['name']==name:
                                 check = 1
                                 now = current_milli_time()
                                 if now - p['record_time'] >= detection_delay_ms:
@@ -143,14 +144,18 @@ def main():
                                     client.connect(broker, port)
                                     client.publish("test/detection", display_name)
                         if check==0:
-                            person['name'] = pred
+                            person['name'] = name
                             person['record_time'] = current_milli_time()
                             vistor.append(person)
                             display_name = person['name']
                             client.connect(broker, port)
                             client.publish("test/detection", display_name)
                     else:
-                        print("unkown", loc)
+                        print("unknown", loc)
+                        name = "unknown"
+                        top, right, bottom, left = loc
+                        face = frame[top-50:bottom+50, left-50:right+50]
+                        update_image(name, face)
         except KeyboardInterrupt:
             print('Stoped face detection application')
             pass
