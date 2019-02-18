@@ -54,6 +54,7 @@ def train(train_dir, model_save_path=None, n_neighbors=None, knn_algo='ball_tree
             face_bounding_boxes = face_recognition.face_locations(image)   
             if len(face_bounding_boxes) != 1:
                 print(("Image {} not suitable for training: {}".format(img_path, "Didn't find a face" if len(face_bounding_boxes) < 1 else "Found more than one face")))
+                os.remove(img_path)
             else:
                 X.append(face_recognition.face_encodings(image, known_face_locations=face_bounding_boxes)[0])
                 y.append(class_dir)
@@ -95,6 +96,8 @@ def save_image(name):
                 face_img = frame[top:bottom, left:right]
             img_path = img_folder + "/" + name + "_" + str(index) + ".jpg"
             status = cv2.imwrite(img_path, face_img)
+            if os.path.getsize(img_path) == 0:
+                os.remove(img_path)
             print("save image number %s status: %s." %(index, status))
             index = index + 1
     except KeyboardInterrupt:
