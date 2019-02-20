@@ -47,7 +47,7 @@ def train(train_dir, model_save_path=None, n_neighbors=None, knn_algo='ball_tree
     X = []
     y = []
     for class_dir in os.listdir(train_dir):
-        if not os.path.isdir(os.path.join(train_dir, class_dir)):
+        if not os.path.isdir(os.path.join(train_dir, class_dir)) or 'unknown' in class_dir:
             continue
         for img_path in image_files_in_folder(os.path.join(train_dir, class_dir)):
             image = face_recognition.load_image_file(img_path)
@@ -157,14 +157,16 @@ def main():
                                     display_name = p['name']
                                     p['record_time'] = current_milli_time()
                                     producer = connect_kafka_producer(broker)
-                                    publish_message(producer, 'facedetection', display_name, display_name)
+                                    key = str(datetime.now()).split(' ')[0]
+                                    publish_message(producer, 'facedetection', key, display_name)
                         if check==0:
                             person['name'] = name
                             person['record_time'] = current_milli_time()
                             vistor.append(person)
                             display_name = person['name']
                             producer = connect_kafka_producer(broker)
-                            publish_message(producer, 'facedetection', display_name, display_name)
+                            key = str(datetime.now()).split(' ')[0]
+                            publish_message(producer, 'facedetection', key, display_name)
                     else:
                         print("unknown", loc)
                         name = "unknown"
